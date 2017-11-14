@@ -54,11 +54,11 @@ int cardType = 0;
 int higherThan1_2m[NR_OF_READERS];
 int warning = 0;
 int numberOfPeople = 0;
-
+int i = 0;
 void checkCardNumber(void);
 void cardProcess(void);
 void dislayLCD(void);
-
+void deleteCard(void);
 void setup() {
   LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
   pinMode(MOTION_PIN, INPUT);
@@ -96,12 +96,8 @@ void loop() {
       Serial.print(F(": Card UID:"));
       dump_byte_array(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size);
       Serial.println();
-      Serial.print(F("PICC type: "));
-      MFRC522::PICC_Type piccType = mfrc522[reader].PICC_GetType(mfrc522[reader].uid.sak);
-      Serial.println(mfrc522[reader].PICC_GetTypeName(piccType));
-
       status = mfrc522[reader].PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522[reader].uid));
-      if (status != MFRC522::STATUS_OK) {
+      if(status != MFRC522::STATUS_OK){
               Serial.print("PCD_Authenticate() failed: ");
               Serial.println(mfrc522[reader].GetStatusCodeName(status));
               return;
@@ -109,12 +105,26 @@ void loop() {
       byte size = sizeof(buffer);
       status = mfrc522[reader].MIFARE_Read(valueBlockA, buffer, &size);
       checkCardNumber();
-      cardProcess();
+      //cardProcess();
+
+      //Xoa Card
+      if(cardType == ADULT || cardType == CHILD){
+        delay(500);
+        Serial.println("Chuan bi xoa card");
+        byte value1Block[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,valueBlockA,~valueBlockA,valueBlockA,~valueBlockA};
+        status = mfrc522[reader].MIFARE_Write(valueBlockA, value1Block, 16);
+        if(status != MFRC522::STATUS_OK) {
+                Serial.print("Xoa card that bai. Vui long thu lai");
+        }
+        else{           
+          Serial.println("Xoa Card thanh cong");        
+        }
+      }
       // Halt PICC
       mfrc522[reader].PICC_HaltA();
       // Stop encryption on PCD
       mfrc522[reader].PCD_StopCrypto1();
-      delay(1000);
+      delay(2000);
     }
   }
 }
@@ -136,12 +146,16 @@ void checkCardNumber(void){
         cardType = ADULT;
         Serial.println("Adult");
      }
-  if (buffer[0]  == 2 && buffer[1]  == 2 && buffer[2]  == 2 && buffer[3]  == 2 && buffer[4]  == 2 && buffer[5]  == 2 && buffer[6]  == 2 && buffer[7]  == 2 && 
+  else if (buffer[0]  == 2 && buffer[1]  == 2 && buffer[2]  == 2 && buffer[3]  == 2 && buffer[4]  == 2 && buffer[5]  == 2 && buffer[6]  == 2 && buffer[7]  == 2 && 
      buffer[8]  == 2 && buffer[9]  == 2 && buffer[10] == 2 && buffer[11] == 2 && buffer[12] == 2 && buffer[13] == 2 && buffer[14] == 2 && buffer[15] == 2 )
      {
         cardType = CHILD;
         Serial.println("Child");
-     }   
+     }
+  else {
+        cardType = 0;
+        Serial.println("The bi loi hoac da bi xoa. Vui long lien he to ky thuat");
+  }
 }
 
 void cardProcess(void){
@@ -186,7 +200,6 @@ void cardProcess(void){
   }
 }
 
-
 void dislayLCD(void){
   lcd.begin(20,4);
   lcd.clear();
@@ -197,3 +210,5 @@ void dislayLCD(void){
   lcd.setCursor(0,2);
   lcd.print("THE:");
 }
+
+

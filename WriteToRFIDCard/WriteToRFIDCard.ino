@@ -20,7 +20,7 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 unsigned long uidDec, uidDecTemp; // hien thi so UID dang thap phan
 int motionDetection = 0;
 int i = 0;
-
+int card = 1;
 
 void setup() {
     LiquidCrystal(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7); 
@@ -65,14 +65,15 @@ void loop() {
 
 
     Serial.println("Writing new value block A(4) : the first of the sector TWO ");
-    byte value1Block[] = { 2,2,2,2,  2,2,2,2, 2,2,2,2,  2,2,2,2,   valueBlockA,~valueBlockA,valueBlockA,~valueBlockA };
+
+    byte value1Block[] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,valueBlockA,~valueBlockA,valueBlockA,~valueBlockA };
+
+        //byte value1Block[] = {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,valueBlockA,~valueBlockA,valueBlockA,~valueBlockA };
     status = mfrc522.MIFARE_Write(valueBlockA, value1Block, 16);
     if (status != MFRC522::STATUS_OK) {
             Serial.print("MIFARE_Write() failed: ");
             Serial.println(mfrc522.GetStatusCodeName(status));
-    }
-    
-                
+    }           
     Serial.println("Read block A(4) : the first of the sector TWO");        
     byte buffer[18];
     byte size = sizeof(buffer);
