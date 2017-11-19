@@ -41,6 +41,8 @@
 //infraredSensor
 #define YES 0
 #define NO 1
+#define WARNING 2
+#define TIMEON 5000
 
 LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 //Variable of RFID
@@ -54,12 +56,13 @@ byte status;
 uint8_t reader = 0;
 //
 int motionDetection = 0;
-int cardType = 0;
+int cardType[2];
 int higherThan1_2m[NR_OF_READERS];
 int warning[2];
 int numberOfPeople = 0;
 int i = 0;
-int cardOk = NO;
+int cardOk[2];
+unsigned long timeOn[2];
 
 void checkCardNumber(void);
 void cardProcess(void);
@@ -69,6 +72,7 @@ void turnOffRelay(int numOfRelay);
 void turnOnSpeaker(int numOfSpeaker);
 void turnOffSpeaker(int numOfSpeaker);
 void processRelay(void);
+int readRelayStatus (int numOfRelay);
 
 void setup() {
   LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
@@ -112,21 +116,19 @@ void loop() {
       status = mfrc522[reader].MIFARE_Read(valueBlockA, buffer, &size);
       checkCardNumber();
       cardProcess();
-      /*
+      
       //Xoa Card
-      if(cardType == ADULT || cardType == CHILD){
-        delay(500);
+      if(cardOk[reader] == YES){
         Serial.println("Chuan bi xoa card");
         byte value1Block[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,valueBlockA,~valueBlockA,valueBlockA,~valueBlockA};
         status = mfrc522[reader].MIFARE_Write(valueBlockA, value1Block, 16);
         if(status != MFRC522::STATUS_OK) {
-                Serial.print("Xoa card that bai. Vui long thu lai");
+                Serial.println("Xoa card that bai. Vui long thu lai");
         }
         else{           
           Serial.println("Xoa Card thanh cong");        
         }
       }
-      */
       // Halt PICC
       mfrc522[reader].PICC_HaltA();
       // Stop encryption on PCD
@@ -134,15 +136,15 @@ void loop() {
       turnOnSpeaker(reader);
       delay(200);
       turnOffSpeaker(reader);
-      delay(2000);
       processRelay();
+    }
+    if(millis() - timeOn[reader] > TIMEON){
+      turnOffRelay(reader);
+      turnOffSpeaker(reader);
     }
   }
 }
 
-/**
- * Helper routine to dump a byte array as hex values to Serial.
- */
 void dump_byte_array(byte *buffer, byte bufferSize) {
   for (byte i = 0; i < bufferSize; i++) {
     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
@@ -154,28 +156,28 @@ void checkCardNumber(void){
   if (buffer[0]  == 1 && buffer[1]  == 1 && buffer[2]  == 1 && buffer[3]  == 1 && buffer[4]  == 1 && buffer[5]  == 1 && buffer[6]  == 1 && buffer[7]  == 1 && 
      buffer[8]  == 1 && buffer[9]  == 1 && buffer[10] == 1 && buffer[11] == 1 && buffer[12] == 1 && buffer[13] == 1 && buffer[14] == 1 && buffer[15] == 1 )
      {
-        cardType = ADULT;
-        Serial.println("Adult");
+        cardType[reader] = ADULT;
      }
   else if (buffer[0]  == 2 && buffer[1]  == 2 && buffer[2]  == 2 && buffer[3]  == 2 && buffer[4]  == 2 && buffer[5]  == 2 && buffer[6]  == 2 && buffer[7]  == 2 && 
      buffer[8]  == 2 && buffer[9]  == 2 && buffer[10] == 2 && buffer[11] == 2 && buffer[12] == 2 && buffer[13] == 2 && buffer[14] == 2 && buffer[15] == 2 )
      {
-        cardType = CHILD;
-        Serial.println("Child");
+        cardType[reader] = CHILD;
      }
-  else {
-        cardType = ERROR_CARD;
-        Serial.println("The bi loi hoac da bi xoa. Vui long lien he to ky thuat");
+  else if (buffer[0]  == 0 && buffer[1]  == 0 && buffer[2]  == 0 && buffer[3]  == 0 && buffer[4]  == 0 && buffer[5]  == 0 && buffer[6]  == 0 && buffer[7]  == 0 && 
+     buffer[8]  == 0 && buffer[9]  == 0 && buffer[10] == 0 && buffer[11] == 0 && buffer[12] == 0 && buffer[13] == 0 && buffer[14] == 0 && buffer[15] == 0)
+     {
+        cardType[reader] = ERROR_CARD;
+        Serial.println("The da bi xoa. Vui long lien he to ky thuat");
+  }
+  else{
+        Serial.println("The bi loi");
   }
 }
 
 
 void cardProcess(void){
-  if(cardType == ERROR_CARD){
-    cardOk = NO;
-  }
-  if(cardType == ADULT){
-    cardOk = YES;
+  if(cardType[reader] == ADULT){
+    cardOk[reader] = YES;
     lcd.print("THE NGUOI LON");
     warning[reader] = 0;
     numberOfPeople++;
@@ -185,8 +187,8 @@ void cardProcess(void){
     lcd.setCursor(0,3);
     lcd.print("THE HOP LE");
   }
-  if(cardType == CHILD && higherThan1_2m == YES){
-      cardOk = NO;
+  if(cardType[reader] == CHILD && higherThan1_2m[reader] == YES){
+      cardOk[reader] = NO;
       dislayLCD();
       lcd.setCursor(4,2);
       lcd.print("TRE EM");
@@ -194,8 +196,8 @@ void cardProcess(void){
       lcd.print("THE KHONG HOP LE");
       warning[reader]++;
   }
-  if(cardType == CHILD && higherThan1_2m == NO){
-      cardOk = YES;
+  if(cardType[reader] == CHILD && higherThan1_2m[reader] == NO){
+      cardOk[reader] = YES;
       warning[reader] = 0;
       numberOfPeople++;
       dislayLCD();
@@ -204,7 +206,11 @@ void cardProcess(void){
       lcd.setCursor(0,3);
       lcd.print("THE HOP LE");
   }
-  if(warning == 3){
+  if(cardType[reader] == ERROR_CARD){
+    cardOk[reader] = NO;
+  }
+  if(warning[reader] >= 3){
+      cardOk[reader] = WARNING;
       turnOnSpeaker(reader);
       delay(2000);
       turnOffSpeaker(reader);
@@ -260,10 +266,15 @@ void turnOffSpeaker (int numOfSpeaker){
 }
 
 void processRelay(void){
-  if(cardOk == YES){
-      turnOnRelay(reader);
-      delay(2000);
-      turnOffRelay(reader);
+  if(cardOk[reader] == YES){
+    cardOk[reader] = NO;
+    turnOnRelay(reader);
+    timeOn[reader] = millis();
+  }
+  if(cardOk[reader] == WARNING){
+    cardOk[reader] = NO;
+    turnOnSpeaker(reader);
+    timeOn[reader] = millis();
   }
 }
 
