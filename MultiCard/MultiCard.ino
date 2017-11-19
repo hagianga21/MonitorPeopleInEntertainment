@@ -9,25 +9,28 @@
 
 //Arduino Uno Pins
 //LCD
-#define LCD_RS 8 
-#define LCD_EN 7
-#define LCD_D4 6
-#define LCD_D5 5
-#define LCD_D6 4
-#define LCD_D7 3
+#define LCD_RS 7 
+#define LCD_EN 6
+#define LCD_D4 5
+#define LCD_D5 4
+#define LCD_D6 3
+#define LCD_D7 2
 //Motion sensor
 #define MOTION_PIN 14
 //Infrared_Sensor
-#define INFRARED_PIN_0 15
+#define INFRARED_PIN_1 14
+#define INFRARED_PIN_2 15
 //RFID
 #define RST_PIN 9     
 #define SS_1_PIN 10   
 #define SS_2_PIN 8
 #define NR_OF_READERS 2
 //SPEAKER
-#define SPEAKER 2
+#define SPEAKER_1 18
+#define SPEAKER_2 19
 //Relay
-#define RELAY 16
+#define RELAY_1 16
+#define RELAY_2 17
 //Card
 #define ADULT 1
 #define CHILD 2
@@ -38,7 +41,6 @@
 #define YES 0
 #define NO 1
 
-
 LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 //Variable of RFID
 byte ssPins[] = {SS_1_PIN, SS_2_PIN};
@@ -48,26 +50,35 @@ byte sector = 1;
 byte valueBlockA = 4;
 byte trailerBlock = 7;
 byte status;
+uint8_t reader = 0;
 //
 int motionDetection = 0;
 int cardType = 0;
 int higherThan1_2m[NR_OF_READERS];
-int warning = 0;
+int warning[2];
 int numberOfPeople = 0;
 int i = 0;
 void checkCardNumber(void);
 void cardProcess(void);
 void dislayLCD(void);
-void deleteCard(void);
+void turnOnRelay(int numOfRelay);
+void turnOffRelay(int numOfRelay);
+void turnOnSpeaker(int numOfSpeaker);
+void turnOffSpeaker(int numOfSpeaker);
+
+
+
 void setup() {
   LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
-  pinMode(MOTION_PIN, INPUT);
-  pinMode(SPEAKER, OUTPUT);
-  pinMode(RELAY, OUTPUT);
-  digitalWrite(RELAY, LOW);
+  pinMode(INFRARED_PIN_1, INPUT);
+  pinMode(INFRARED_PIN_2, INPUT);
+  pinMode(SPEAKER_1, OUTPUT);
+  pinMode(SPEAKER_2, OUTPUT);
+  pinMode(RELAY_1, OUTPUT);
+  pinMode(RELAY_2, OUTPUT);
   Serial.begin(9600); 
   SPI.begin();        
-  for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
+  for (reader = 0; reader < NR_OF_READERS; reader++) {
     mfrc522[reader].PCD_Init(ssPins[reader], RST_PIN);
     Serial.print(F("Reader "));
     Serial.print(reader);
@@ -78,13 +89,10 @@ void setup() {
   dislayLCD();
 }
 
-/**
- * Main loop.
- */
 void loop() {
-  higherThan1_2m[0] = digitalRead(INFRARED_PIN_0);
-  for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
-    // Look for new cards
+  higherThan1_2m[0] = digitalRead(INFRARED_PIN_1);
+  higherThan1_2m[1] = digitalRead(INFRARED_PIN_2);
+  for (reader = 0; reader < NR_OF_READERS; reader++) {
     MFRC522::MIFARE_Key key;
     for (byte i = 0; i < 6; i++) {
        key.keyByte[i] = 0xFF;
@@ -105,8 +113,9 @@ void loop() {
       byte size = sizeof(buffer);
       status = mfrc522[reader].MIFARE_Read(valueBlockA, buffer, &size);
       checkCardNumber();
-      //cardProcess();
+      
 
+      /*
       //Xoa Card
       if(cardType == ADULT || cardType == CHILD){
         delay(500);
@@ -120,11 +129,16 @@ void loop() {
           Serial.println("Xoa Card thanh cong");        
         }
       }
+      */
       // Halt PICC
       mfrc522[reader].PICC_HaltA();
       // Stop encryption on PCD
       mfrc522[reader].PCD_StopCrypto1();
+      turnOnSpeaker(reader);
+      delay(200);
+      turnOffSpeaker(reader);
       delay(2000);
+      cardProcess();
     }
   }
 }
@@ -158,19 +172,20 @@ void checkCardNumber(void){
   }
 }
 
+
 void cardProcess(void){
   if(cardType == ADULT){
     lcd.print("THE NGUOI LON");
-    warning = 0;
+    warning[reader] = 0;
     numberOfPeople++;
     dislayLCD();
     lcd.setCursor(4,2);
     lcd.print("NGUOI LON");
     lcd.setCursor(0,3);
     lcd.print("THE HOP LE");
-    digitalWrite(RELAY, HIGH);
+    turnOnRelay(reader);
     delay(2000);
-    digitalWrite(RELAY, LOW);
+    turnOffRelay(reader);
   }
   if(cardType == CHILD && higherThan1_2m == YES){
       dislayLCD();
@@ -178,25 +193,25 @@ void cardProcess(void){
       lcd.print("TRE EM");
       lcd.setCursor(0,3);
       lcd.print("THE KHONG HOP LE");
-      warning++;
+      warning[reader]++;
   }
   if(cardType == CHILD && higherThan1_2m == NO){
-      warning = 0;
+      warning[reader] = 0;
       numberOfPeople++;
       dislayLCD();
       lcd.setCursor(4,2);
       lcd.print("TRE EM");
       lcd.setCursor(0,3);
       lcd.print("THE HOP LE");
-      digitalWrite(RELAY, HIGH);
+      turnOnRelay(reader);
       delay(2000);
-      digitalWrite(RELAY, LOW);
+      turnOffRelay(reader);
   }
   if(warning == 3){
-      digitalWrite(SPEAKER, HIGH);
+      turnOnSpeaker(reader);
       delay(2000);
-      digitalWrite(SPEAKER, LOW);
-      warning = 0;
+      turnOffSpeaker(reader);
+      warning[reader] = 0;
   }
 }
 
@@ -211,4 +226,38 @@ void dislayLCD(void){
   lcd.print("THE:");
 }
 
+void turnOnRelay (int numOfRelay){
+  if(numOfRelay == 0){
+    digitalWrite(RELAY_1, HIGH);
+  }
+  if(numOfRelay == 1){
+    digitalWrite(RELAY_2, HIGH);
+  }
+}
 
+void turnOffRelay (int numOfRelay){
+  if(numOfRelay == 0){
+    digitalWrite(RELAY_1, LOW);
+  }
+  if(numOfRelay == 1){
+    digitalWrite(RELAY_2, LOW);
+  }
+}
+
+void turnOnSpeaker (int numOfSpeaker){
+  if(numOfSpeaker == 0){
+    digitalWrite(SPEAKER_1, HIGH);
+  }
+  if(numOfSpeaker == 1){
+    digitalWrite(SPEAKER_2, HIGH);
+  }
+}
+
+void turnOffSpeaker (int numOfSpeaker){
+  if(numOfSpeaker == 0){
+    digitalWrite(SPEAKER_1, LOW);
+  }
+  if(numOfSpeaker == 1){
+    digitalWrite(SPEAKER_2, LOW);
+  }
+}
