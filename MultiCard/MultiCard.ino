@@ -32,6 +32,7 @@
 #define RELAY_1 16
 #define RELAY_2 17
 //Card
+#define ERROR_CARD 0
 #define ADULT 1
 #define CHILD 2
 //Motion
@@ -58,6 +59,8 @@ int higherThan1_2m[NR_OF_READERS];
 int warning[2];
 int numberOfPeople = 0;
 int i = 0;
+int cardOk = NO;
+
 void checkCardNumber(void);
 void cardProcess(void);
 void dislayLCD(void);
@@ -65,8 +68,7 @@ void turnOnRelay(int numOfRelay);
 void turnOffRelay(int numOfRelay);
 void turnOnSpeaker(int numOfSpeaker);
 void turnOffSpeaker(int numOfSpeaker);
-
-
+void processRelay(void);
 
 void setup() {
   LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
@@ -77,15 +79,11 @@ void setup() {
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
   Serial.begin(9600); 
-  SPI.begin();        
+  SPI.begin();  
+  lcd.begin(20,4);      
   for (reader = 0; reader < NR_OF_READERS; reader++) {
     mfrc522[reader].PCD_Init(ssPins[reader], RST_PIN);
-    Serial.print(F("Reader "));
-    Serial.print(reader);
-    Serial.print(F(": "));
-    mfrc522[reader].PCD_DumpVersionToSerial();
   }
-  lcd.begin(20,4);
   dislayLCD();
 }
 
@@ -113,8 +111,7 @@ void loop() {
       byte size = sizeof(buffer);
       status = mfrc522[reader].MIFARE_Read(valueBlockA, buffer, &size);
       checkCardNumber();
-      
-
+      cardProcess();
       /*
       //Xoa Card
       if(cardType == ADULT || cardType == CHILD){
@@ -138,7 +135,7 @@ void loop() {
       delay(200);
       turnOffSpeaker(reader);
       delay(2000);
-      cardProcess();
+      processRelay();
     }
   }
 }
@@ -167,14 +164,18 @@ void checkCardNumber(void){
         Serial.println("Child");
      }
   else {
-        cardType = 0;
+        cardType = ERROR_CARD;
         Serial.println("The bi loi hoac da bi xoa. Vui long lien he to ky thuat");
   }
 }
 
 
 void cardProcess(void){
+  if(cardType == ERROR_CARD){
+    cardOk = NO;
+  }
   if(cardType == ADULT){
+    cardOk = YES;
     lcd.print("THE NGUOI LON");
     warning[reader] = 0;
     numberOfPeople++;
@@ -183,11 +184,9 @@ void cardProcess(void){
     lcd.print("NGUOI LON");
     lcd.setCursor(0,3);
     lcd.print("THE HOP LE");
-    turnOnRelay(reader);
-    delay(2000);
-    turnOffRelay(reader);
   }
   if(cardType == CHILD && higherThan1_2m == YES){
+      cardOk = NO;
       dislayLCD();
       lcd.setCursor(4,2);
       lcd.print("TRE EM");
@@ -196,6 +195,7 @@ void cardProcess(void){
       warning[reader]++;
   }
   if(cardType == CHILD && higherThan1_2m == NO){
+      cardOk = YES;
       warning[reader] = 0;
       numberOfPeople++;
       dislayLCD();
@@ -203,9 +203,6 @@ void cardProcess(void){
       lcd.print("TRE EM");
       lcd.setCursor(0,3);
       lcd.print("THE HOP LE");
-      turnOnRelay(reader);
-      delay(2000);
-      turnOffRelay(reader);
   }
   if(warning == 3){
       turnOnSpeaker(reader);
@@ -261,3 +258,12 @@ void turnOffSpeaker (int numOfSpeaker){
     digitalWrite(SPEAKER_2, LOW);
   }
 }
+
+void processRelay(void){
+  if(cardOk == YES){
+      turnOnRelay(reader);
+      delay(2000);
+      turnOffRelay(reader);
+  }
+}
+
