@@ -1,0 +1,6 @@
+Removed Pin From Net: NetName=SS_RFID_1 Pin=P11-7
+Removed Pin From Net: NetName=SS_RFID_2 Pin=P16-7
+Added Pin To Net: NetName=SS_RFID_1 Pin=P11-1
+Added Pin To Net: NetName=RST_RFID Pin=P11-7
+Added Pin To Net: NetName=SS_RFID_2 Pin=P16-1
+Added Pin To Net: NetName=RST_RFID Pin=P16-7

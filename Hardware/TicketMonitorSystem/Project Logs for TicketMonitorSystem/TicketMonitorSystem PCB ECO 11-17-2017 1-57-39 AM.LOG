@@ -1,0 +1,4 @@
+Removed Pin From Net: NetName=NetC21_1 Pin=SW3-2
+Removed Member From Class: ClassName=TicketMonitorSystem Member=SW3
+Added Pin To Net: NetName=NetC21_1 Pin=JDC-1
+Change Net Name : Old Net Name=NetC21_1 New Net Name=9V

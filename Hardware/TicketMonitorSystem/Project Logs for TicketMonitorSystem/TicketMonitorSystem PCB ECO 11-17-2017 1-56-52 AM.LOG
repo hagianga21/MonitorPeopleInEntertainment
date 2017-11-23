@@ -1,0 +1,8 @@
+Change Component Comment : Designator=C? Old Comment=10uF New Comment=100uF/16V
+Change Component Designator: OldDesignator=C31 NewDesignator=C22
+Change Component Designator: OldDesignator=C33 NewDesignator=C23
+Change Component Designator: OldDesignator=C? NewDesignator=C21
+Change Component Designator: OldDesignator=D31 NewDesignator=D21
+Change Component Designator: OldDesignator=R31 NewDesignator=R21
+Change Net Name : Old Net Name=NetC31_2 New Net Name=NetC21_1
+Change Net Name : Old Net Name=NetD31_1 New Net Name=NetD21_1

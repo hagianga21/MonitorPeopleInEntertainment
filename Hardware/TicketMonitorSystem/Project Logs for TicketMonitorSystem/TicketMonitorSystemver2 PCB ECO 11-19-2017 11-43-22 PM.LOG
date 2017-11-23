@@ -1,0 +1,4 @@
+Change Component Footprint: Designator=D42 Old Footprint=LED-0 3mm GREEN New Footprint=LED-0805 RED
+Change Component Footprint: Designator=D44 Old Footprint=LED-0 3mm GREEN New Footprint=LED-0805 RED
+Change Component Footprint: Designator=D61 Old Footprint=LED-0 5mm RED New Footprint=LED-0805 RED
+Change Component Footprint: Designator=D63 Old Footprint=LED-0 5mm RED New Footprint=LED-0805 RED

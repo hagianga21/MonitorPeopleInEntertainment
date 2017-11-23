@@ -1,0 +1,32 @@
+Added Component: Designator=IC?(Nano)
+Added Pin To Net: NetName=NetIC?_1 Pin=IC?-1
+Added Pin To Net: NetName=NetIC?_2 Pin=IC?-2
+Added Pin To Net: NetName=NetIC?_3 Pin=IC?-3
+Added Pin To Net: NetName=GND Pin=IC?-4
+Added Pin To Net: NetName=D7_LCD Pin=IC?-5
+Added Pin To Net: NetName=D6_LCD Pin=IC?-6
+Added Pin To Net: NetName=D5_LCD Pin=IC?-7
+Added Pin To Net: NetName=D4_LCD Pin=IC?-8
+Added Pin To Net: NetName=EN_LCD Pin=IC?-9
+Added Pin To Net: NetName=RS_LCD Pin=IC?-10
+Added Pin To Net: NetName=SS_RFID_2 Pin=IC?-11
+Added Pin To Net: NetName=RST_RFID Pin=IC?-12
+Added Pin To Net: NetName=SS_RFID_1 Pin=IC?-13
+Added Pin To Net: NetName=MOSI_RFID Pin=IC?-14
+Added Pin To Net: NetName=MISO_RFID Pin=IC?-15
+Added Pin To Net: NetName=SCK_RFID Pin=IC?-16
+Added Pin To Net: NetName=3V3 Pin=IC?-17
+Added Pin To Net: NetName=NetIC?_18 Pin=IC?-18
+Added Pin To Net: NetName=INFRARED_RFID_1 Pin=IC?-19
+Added Pin To Net: NetName=INFRARED_RFID_2 Pin=IC?-20
+Added Pin To Net: NetName=RELAY_1 Pin=IC?-21
+Added Pin To Net: NetName=RELAY_2 Pin=IC?-22
+Added Pin To Net: NetName=BUZZER_1 Pin=IC?-23
+Added Pin To Net: NetName=BUZZER_2 Pin=IC?-24
+Added Pin To Net: NetName=NetIC?_25 Pin=IC?-25
+Added Pin To Net: NetName=NetIC?_26 Pin=IC?-26
+Added Pin To Net: NetName=NetIC?_27 Pin=IC?-27
+Added Pin To Net: NetName=NetIC?_28 Pin=IC?-28
+Added Pin To Net: NetName=GND Pin=IC?-29
+Added Pin To Net: NetName=5V Pin=IC?-30
+Added Member To Class: ClassName=TicketMonitorSystem Member=Component IC? Arduino Nano
